@@ -1,5 +1,11 @@
 # ★★★ Tynogels
 
+[![build](https://travis-ci.org/poteat/tynogels.svg?branch=master)](https://travis-ci.org/poteat/tynogels)
+[![coverage](https://img.shields.io/codecov/c/github/poteat/tynogels.svg)](https://codecov.io/gh/poteat/tynogels)
+[![vulnerabilities](https://snyk.io/test/github/poteat/tynogels/badge.svg)](https://snyk.io/test/github/poteat/tynogels)
+[![dependencies](https://img.shields.io/david/poteat/tynogels)](https://david-dm.org/poteat/tynogels)
+[![devDependencies](https://img.shields.io/david/dev/poteat/tynogels)](https://david-dm.org/poteat/tynogels?type=dev)
+
 A modern, await-based DynamoDB data mapper built on runtime types.
 
 ## Features
