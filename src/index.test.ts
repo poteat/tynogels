@@ -10,6 +10,11 @@ const shouldLog = false;
 
 const dynProcess = dynamo.launch(null, 8000);
 
+aws.config.update({
+  accessKeyId: "YOURKEY",
+  secretAccessKey: "YOURSECRET"
+});
+
 tynogels.config({
   region: "us-east-1",
   endpoint: "http://localhost:8000"
