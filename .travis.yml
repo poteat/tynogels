@@ -1,0 +1,12 @@
+language: node_js
+node_js: 12.4.0
+
+jobs:
+  include:
+    - stage: lint
+      script:
+        - npx eslint ./src/**
+    - stage: test
+      script:
+        - npm test
+        - ./node_modules/.bin/codecov
