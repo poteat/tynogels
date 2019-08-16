@@ -8,8 +8,6 @@ import tynogels from "./index";
 
 const shouldLog = false;
 
-const dynProcess = dynamo.launch(null, 8000);
-
 aws.config.update({
   accessKeyId: "YOURKEY",
   secretAccessKey: "YOURSECRET"
@@ -86,12 +84,25 @@ const User = tynogels.define({
   tableName: "users"
 });
 
+const Building = tynogels.define({
+  tableName: "buildings",
+  hashKey: {
+    buildingId: t.number
+  },
+  sortKey: {
+    location: t.string
+  },
+  schema: {}
+});
+
+const dynProcess = dynamo.launch(null, 8000);
+
+createTable(User.config);
+createTable(Building.config);
+
+beforeAll(async () => sleep(5000));
 afterEach(async () => sleep(100));
 afterAll(() => dynProcess.kill());
-
-it("Create users table", async () => {
-  await createTable(User.config);
-});
 
 it("Create user", async () => {
   await User.create({
@@ -229,21 +240,6 @@ it("Query sort keys that are between two values", async () => {
   }
 });
 
-const Building = tynogels.define({
-  tableName: "buildings",
-  hashKey: {
-    buildingId: t.number
-  },
-  sortKey: {
-    location: t.string
-  },
-  schema: {}
-});
-
-it("Create buildings table", async () => {
-  await createTable(Building.config);
-});
-
 it("Create building record", async () => {
   await Building.create({
     buildingId: 13371337,
@@ -274,5 +270,7 @@ it("Query sort key that begins with a value", async () => {
     .beginsWith("United States")
     .exec();
 
-  console.log(buildings);
+  if (shouldLog) {
+    console.log(buildings);
+  }
 });
