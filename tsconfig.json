@@ -9,6 +9,5 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declaration": true
-  },
-  "exclude": ["src/*.test.ts"]
+  }
 }
