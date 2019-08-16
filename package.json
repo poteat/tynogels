@@ -1,0 +1,52 @@
+{
+  "name": "tynogels",
+  "description": "A modern, typed DynamoDB data mapper.",
+  "keywords": [
+    "aws",
+    "dynamodb",
+    "datamapper",
+    "typed",
+    "typescript",
+    "promises"
+  ],
+  "author": "Michael Poteat <me@mpote.at>",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc",
+    "version": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:poteat/tynogels"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.17",
+    "@types/local-dynamo": "^0.5.0",
+    "@types/lodash": "^4.14.136",
+    "@types/node": "^12.7.1",
+    "@typescript-eslint/eslint-plugin": "^1.13.0",
+    "@typescript-eslint/parser": "^1.13.0",
+    "codecov": "^3.5.0",
+    "eslint": "^6.1.0",
+    "eslint-config-prettier": "^6.0.0",
+    "eslint-plugin-jest": "^22.15.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "jest": "^24.8.0",
+    "local-dynamo": "^0.5.0",
+    "prettier": "^1.18.2",
+    "sleep-promise": "^8.0.1",
+    "ts-jest": "^24.0.2",
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.5.3"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.508.0",
+    "fp-ts": "^2.0.5",
+    "io-ts": "^2.0.1",
+    "lodash": "^4.17.15"
+  }
+}
