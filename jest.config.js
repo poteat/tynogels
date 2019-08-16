@@ -1,6 +1,6 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  collectCoverage: true,
-  coverageReporters: ["html"]
+  testRegex: "src/.*\\.test\\.ts$",
+  collectCoverage: true
 };
