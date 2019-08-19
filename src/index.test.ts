@@ -100,7 +100,7 @@ const dynProcess = dynamo.launch(null, 8000);
 createTable(User.config);
 createTable(Building.config);
 
-beforeAll(async () => sleep(5000));
+beforeAll(async () => sleep(20000));
 afterEach(async () => sleep(100));
 afterAll(() => dynProcess.kill());
 
