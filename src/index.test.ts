@@ -100,6 +100,8 @@ const dynProcess = dynamo.launch(null, 8000);
 createTable(User.config);
 createTable(Building.config);
 
+jest.setTimeout(30000);
+
 beforeAll(async () => sleep(20000));
 afterEach(async () => sleep(100));
 afterAll(() => dynProcess.kill());
