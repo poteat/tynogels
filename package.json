@@ -12,7 +12,7 @@
   "author": "Michael Poteat <me@mpote.at>",
   "license": "MIT",
   "main": "dist/index.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "test": "jest",
     "build": "tsc",
