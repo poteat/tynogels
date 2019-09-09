@@ -81,7 +81,8 @@ const User = tynogels.define({
     email: t.string,
     thing: t.string
   },
-  tableName: "users"
+  tableName: "users",
+  secondaryIndexes: []
 });
 
 const Building = tynogels.define({
@@ -92,13 +93,46 @@ const Building = tynogels.define({
   sortKey: {
     location: t.string
   },
-  schema: {}
+  schema: {},
+  secondaryIndexes: []
 });
 
 const dynProcess = dynamo.launch(null, 8000);
 
 createTable(User.config);
 createTable(Building.config);
+
+// Create "Movies" table with GSI
+
+ddb
+  .createTable({
+    TableName: "Movies",
+    KeySchema: [
+      { AttributeName: "year", KeyType: "HASH" } //Partition key
+    ],
+    AttributeDefinitions: [
+      { AttributeName: "year", AttributeType: "N" },
+      { AttributeName: "filmCode", AttributeType: "N" }
+    ],
+    ProvisionedThroughput: {
+      ReadCapacityUnits: 10,
+      WriteCapacityUnits: 10
+    },
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "Gsi-Test",
+        KeySchema: [{ AttributeName: "filmCode", KeyType: "HASH" }],
+        Projection: {
+          ProjectionType: "KEYS_ONLY"
+        },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 10,
+          WriteCapacityUnits: 10
+        }
+      }
+    ]
+  })
+  .promise();
 
 jest.setTimeout(30000);
 
@@ -274,5 +308,40 @@ it("Query sort key that begins with a value", async () => {
 
   if (shouldLog) {
     console.log(buildings);
+  }
+});
+
+const Movie = tynogels.define({
+  tableName: "Movies",
+  hashKey: {
+    year: t.number
+  },
+  sortKey: {},
+  schema: {
+    filmCode: t.number
+  },
+  secondaryIndexes: [
+    {
+      name: "Gsi-Test",
+      hashKey: {
+        filmCode: t.number
+      },
+      sortKey: {}
+    }
+  ]
+});
+
+it("Create movies for later testing", async () => {
+  await Movie.create({ year: 1000, filmCode: 10 });
+  await Movie.create({ year: 2000, filmCode: 20 });
+  await Movie.create({ year: 3000, filmCode: 30 });
+  await Movie.create({ year: 4000, filmCode: 40 });
+});
+
+it("Read movie based on GSI", async () => {
+  const movie = await Movie.read({ filmCode: 10 });
+
+  if (shouldLog) {
+    console.log(movie);
   }
 });
