@@ -8,13 +8,20 @@ let doc = new aws.DynamoDB.DocumentClient({ region });
 export default {
   config: (config: AWS.DynamoDB.ClientConfiguration) =>
     (doc = new aws.DynamoDB.DocumentClient(config)),
-  define: <P1 extends t.Props, P2 extends t.Props, P3 extends t.Props>(config: {
+  define: <
+    P1 extends t.Props,
+    P2 extends t.Props,
+    P3 extends t.Props,
+    P4 extends t.Props,
+    P5 extends t.Props
+  >(config: {
     tableName: string;
     hashKey: P1;
     sortKey: P2;
     schema: P3;
+    secondaryIndexes: { name: string; hashKey: P4; sortKey: P5 }[];
   }) =>
-    ((type, keyType, hashType, sortType) => ({
+    ((type, keyType, hashType, sortType, baseKeyType) => ({
       config,
       create: async (
         x:
@@ -38,9 +45,33 @@ export default {
           : doc.put({ Item: x, TableName: config.tableName }).promise(),
       read: async (
         x: t.TypeOf<typeof keyType>
-      ): Promise<t.TypeOf<typeof keyType> & t.TypeOf<typeof type>> =>
-        (await doc.get({ Key: x, TableName: config.tableName }).promise())
-          .Item as any,
+      ): Promise<
+        t.TypeOf<typeof keyType> &
+          t.TypeOf<typeof type> &
+          t.TypeOf<typeof baseKeyType>
+      > => {
+        if (x[_.keys(config.hashKey)[0]]) {
+          return (await doc
+            .get({ Key: x, TableName: config.tableName })
+            .promise()).Item as any;
+        } else {
+          return (await doc
+            .query({
+              TableName: config.tableName,
+              IndexName: config.secondaryIndexes.find(
+                i => _.keys(i.hashKey)[0] === _.keys(x)[0]
+              ).name,
+              KeyConditionExpression: `#x = :x`,
+              ExpressionAttributeNames: {
+                "#x": _.keys(x)[0]
+              },
+              ExpressionAttributeValues: {
+                ":x": _.values(x)[0]
+              }
+            })
+            .promise()).Items[0] as any;
+        }
+      },
       batchRead: async (
         x: t.TypeOf<typeof keyType>[]
       ): Promise<(t.TypeOf<typeof keyType> & t.TypeOf<typeof type>)[]> =>
@@ -172,8 +203,34 @@ export default {
         doc.delete({ Key: x, TableName: config.tableName }).promise()
     }))(
       t.partial(config.schema),
-      t.type({ ...config.hashKey, ...config.sortKey }),
+      t.union([
+        t.type({
+          ...config.hashKey,
+          ...config.sortKey
+        }),
+        t.type({
+          ..._.get(config.secondaryIndexes[0], "hashKey"),
+          ..._.get(config.secondaryIndexes[0], "sortKey")
+        }),
+        t.type({
+          ..._.get(config.secondaryIndexes[1], "hashKey"),
+          ..._.get(config.secondaryIndexes[1], "sortKey")
+        }),
+        t.type({
+          ..._.get(config.secondaryIndexes[2], "hashKey"),
+          ..._.get(config.secondaryIndexes[2], "sortKey")
+        }),
+        t.type({
+          ..._.get(config.secondaryIndexes[3], "hashKey"),
+          ..._.get(config.secondaryIndexes[3], "sortKey")
+        }),
+        t.type({
+          ..._.get(config.secondaryIndexes[4], "hashKey"),
+          ..._.get(config.secondaryIndexes[4], "sortKey")
+        })
+      ]),
       t.type(config.hashKey),
-      t.type(config.sortKey)
+      t.type(config.sortKey),
+      t.type({ ...config.hashKey, ...config.sortKey })
     )
 };
