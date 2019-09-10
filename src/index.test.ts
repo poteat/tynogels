@@ -102,7 +102,7 @@ const dynProcess = dynamo.launch(null, 8000);
 createTable(User.config);
 createTable(Building.config);
 
-// Create "Movies" table with GSI
+// Create "Movies" table with GSI with only hash key
 
 ddb
   .createTable({
@@ -122,6 +122,37 @@ ddb
       {
         IndexName: "Gsi-Test",
         KeySchema: [{ AttributeName: "filmCode", KeyType: "HASH" }],
+        Projection: {
+          ProjectionType: "KEYS_ONLY"
+        },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 10,
+          WriteCapacityUnits: 10
+        }
+      }
+    ]
+  })
+  .promise();
+
+ddb
+  .createTable({
+    TableName: "Books",
+    KeySchema: [{ AttributeName: "year", KeyType: "HASH" }],
+    AttributeDefinitions: [
+      { AttributeName: "year", AttributeType: "N" },
+      { AttributeName: "bookCode", AttributeType: "N" }
+    ],
+    ProvisionedThroughput: {
+      ReadCapacityUnits: 10,
+      WriteCapacityUnits: 10
+    },
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "Gsi-Test",
+        KeySchema: [
+          { AttributeName: "bookCode", KeyType: "HASH" },
+          { AttributeName: "year", KeyType: "RANGE" }
+        ],
         Projection: {
           ProjectionType: "KEYS_ONLY"
         },
@@ -343,5 +374,41 @@ it("Read movie based on GSI", async () => {
 
   if (shouldLog) {
     console.log(movie);
+  }
+});
+
+const Book = tynogels.define({
+  tableName: "Books",
+  hashKey: {
+    year: t.number
+  },
+  sortKey: {},
+  schema: {
+    bookCode: t.number
+  },
+  secondaryIndexes: [
+    {
+      name: "Gsi-Test",
+      hashKey: {
+        bookCode: t.number
+      },
+      sortKey: {
+        year: t.number
+      }
+    }
+  ]
+});
+
+it("Create books for later testing", async () => {
+  await Promise.all(
+    _.times(5, x => Book.create({ year: (x + 1) * 1000, bookCode: x + 42 }))
+  );
+});
+
+it("Read book based on hash/sort GSI", async () => {
+  const book = await Book.read({ bookCode: 42, year: 1000 });
+
+  if (shouldLog) {
+    console.log(book);
   }
 });

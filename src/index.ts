@@ -50,24 +50,39 @@ export default {
           t.TypeOf<typeof type> &
           t.TypeOf<typeof baseKeyType>
       > => {
-        if (x[_.keys(config.hashKey)[0]]) {
+        const keyOf = x => _.keys(x)[0];
+
+        if (
+          _.keys(x)[0] === keyOf(config.hashKey) &&
+          _.keys(x)[1] === keyOf(config.sortKey)
+        ) {
           return (await doc
             .get({ Key: x, TableName: config.tableName })
             .promise()).Item as any;
         } else {
+          const skey = config.secondaryIndexes.find(
+            skey =>
+              keyOf(skey.hashKey) === _.keys(x)[0] &&
+              keyOf(skey.sortKey) === _.keys(x)[1]
+          );
+
+          const sortPresent = Boolean(_.keys(skey.sortKey)[0]);
+
           return (await doc
             .query({
               TableName: config.tableName,
-              IndexName: config.secondaryIndexes.find(
-                i => _.keys(i.hashKey)[0] === _.keys(x)[0]
-              ).name,
-              KeyConditionExpression: `#x = :x`,
-              ExpressionAttributeNames: {
-                "#x": _.keys(x)[0]
-              },
-              ExpressionAttributeValues: {
-                ":x": _.values(x)[0]
-              }
+              IndexName: skey.name,
+              KeyConditionExpression: `#x = :x${
+                sortPresent ? " and #y = :y" : ""
+              }`,
+              ExpressionAttributeNames: _.pickBy({
+                "#x": _.keys(x)[0],
+                "#y": sortPresent ? _.keys(x)[1] : null
+              }),
+              ExpressionAttributeValues: _.pickBy({
+                ":x": _.values(x)[0],
+                ":y": sortPresent ? _.values(x)[1] : null
+              })
             })
             .promise()).Items[0] as any;
         }
