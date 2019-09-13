@@ -6,7 +6,7 @@ import aws from "aws-sdk";
 
 import tynogels from "./index";
 
-const shouldLog = true;
+const shouldLog = false;
 
 aws.config.update({
   accessKeyId: "YOURKEY",
@@ -78,6 +78,8 @@ const User = tynogels.define({
     age: t.number
   },
   schema: {
+    name: t.string,
+    age: t.number,
     email: t.string,
     thing: t.string
   },
@@ -93,7 +95,10 @@ const Building = tynogels.define({
   sortKey: {
     location: t.string
   },
-  schema: {},
+  schema: {
+    buildingId: t.number,
+    location: t.string
+  },
   secondaryIndexes: []
 });
 
@@ -171,213 +176,217 @@ beforeAll(async () => sleep(20000));
 afterEach(async () => sleep(100));
 afterAll(() => dynProcess.kill());
 
-// it("Create user", async () => {
-//   await User.create({
-//     name: "foo",
-//     age: 18
-//   });
-// });
+it("Create user", async () => {
+  await User.create({
+    name: "foo",
+    age: 18
+  });
+});
 
-// it("Batch create users", async () => {
-//   await User.create([
-//     ..._.times(50, i => ({
-//       name: `foo${i}`,
-//       email: `foo${i}@bar`,
-//       age: 18,
-//       thing: "foob"
-//     })),
-//     ..._.times(30, i => ({
-//       name: "foob",
-//       age: i + 1,
-//       thing: `foob_${i + 1}`
-//     }))
-//   ]);
-// });
+it("Batch create users", async () => {
+  await User.create([
+    ..._.times(50, i => ({
+      name: `foo${i}`,
+      email: `foo${i}@bar`,
+      age: 18,
+      thing: "foob"
+    })),
+    ..._.times(30, i => ({
+      name: "foob",
+      age: i + 1,
+      thing: `foob_${i + 1}`
+    }))
+  ]);
+});
 
-// it("Update user", async () => {
-//   await User.update({
-//     name: "foo",
-//     age: 18,
-//     thing: "what"
-//   });
-// });
+it("Update user", async () => {
+  await User.update({
+    name: "foo",
+    age: 18,
+    thing: "what"
+  });
+});
 
-// it("Delete user", async () => {
-//   await User.delete({
-//     name: "foo",
-//     age: 18
-//   });
-// });
+it("Delete user", async () => {
+  await User.delete({
+    name: "foo",
+    age: 18
+  });
+});
 
-// it("Read user", async () => {
-//   const user = await User.read({
-//     name: "foo1",
-//     age: 18
-//   });
+it("Read user", async () => {
+  const user = await User.read({
+    name: "foo1",
+    age: 18
+  });
 
-//   if (shouldLog) {
-//     console.log(user);
-//   }
-// });
+  if (shouldLog) {
+    console.log(user);
+  }
+});
 
-// it("Batch read user", async () => {
-//   const users = await User.batchRead(
-//     _.times(50, i => ({
-//       name: `foo${i}`,
-//       age: 18
-//     }))
-//   );
+it("Batch read user", async () => {
+  const users = await User.batchRead(
+    _.times(50, i => ({
+      name: `foo${i}`,
+      age: 18
+    }))
+  );
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Simple query user", async () => {
-//   const users = await User.query("foob").exec();
+it("Simple query user", async () => {
+  const users = await User.query("foob").exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Query on sort key equality", async () => {
-//   const users = await User.query("foob")
-//     .where("age")
-//     .equals(15)
-//     .exec();
+it("Query on sort key equality", async () => {
+  const users = await User.query("foob")
+    .where("age")
+    .equals(15)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Query on sort key via less than or equal", async () => {
-//   const users = await User.query("foob")
-//     .where("age")
-//     .lte(10)
-//     .exec();
+it("Query on sort key via less than or equal", async () => {
+  const users = await User.query("foob")
+    .where("age")
+    .lte(10)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Query on sort key via less than", async () => {
-//   const users = await User.query("foob")
-//     .where("age")
-//     .lt(6)
-//     .exec();
+it("Query on sort key via less than", async () => {
+  const users = await User.query("foob")
+    .where("age")
+    .lt(6)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Query on sort key via greater than", async () => {
-//   const users = await User.query("foob")
-//     .where("age")
-//     .gt(24)
-//     .exec();
+it("Query on sort key via greater than", async () => {
+  const users = await User.query("foob")
+    .where("age")
+    .gt(24)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Query on sort key via greater than or equal", async () => {
-//   const users = await User.query("foob")
-//     .where("age")
-//     .gte(15)
-//     .exec();
+it("Query on sort key via greater than or equal", async () => {
+  const users = await User.query("foob")
+    .where("age")
+    .gte(15)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Query sort keys that are between two values", async () => {
-//   const users = await User.query("foob")
-//     .where("age")
-//     .between(5, 10)
-//     .exec();
+it("Query sort keys that are between two values", async () => {
+  const users = await User.query("foob")
+    .where("age")
+    .between(5, 10)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(users);
-//   }
-// });
+  if (shouldLog) {
+    console.log(users);
+  }
+});
 
-// it("Create building record", async () => {
-//   await Building.create({
-//     buildingId: 13371337,
-//     location: "The Moon"
-//   });
-// });
+it("Create building record", async () => {
+  await Building.create({
+    buildingId: 13371337,
+    location: "The Moon"
+  });
+});
 
-// it("Batch create building records", async () => {
-//   await Building.create([
-//     {
-//       buildingId: 100,
-//       location: "United States, New York"
-//     },
-//     {
-//       buildingId: 100,
-//       location: "United States, New Jersey"
-//     },
-//     {
-//       buildingId: 100,
-//       location: "Australia, Sydney"
-//     }
-//   ]);
-// });
+it("Batch create building records", async () => {
+  await Building.create([
+    {
+      buildingId: 100,
+      location: "United States, New York"
+    },
+    {
+      buildingId: 100,
+      location: "United States, New Jersey"
+    },
+    {
+      buildingId: 100,
+      location: "Australia, Sydney"
+    }
+  ]);
+});
 
-// it("Query sort key that begins with a value", async () => {
-//   const buildings = await Building.query({
-//     buildingId: 100
-//   })
-//     .where("location")
-//     .beginsWith("United States")
-//     .exec();
+it("Query sort key that begins with a value", async () => {
+  const buildings = await Building.query(100)
+    .where("location")
+    .beginsWith("United States")
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(buildings);
-//   }
-// });
+  if (shouldLog) {
+    console.log(buildings);
+  }
+});
 
-// const Movie = tynogels.define({
-//   tableName: "Movies",
-//   hashKey: {
-//     year: t.number
-//   },
-//   sortKey: {},
-//   schema: {
-//     filmCode: t.number
-//   },
-//   secondaryIndexes: [
-//     {
-//       name: "Gsi-Test",
-//       hashKey: {
-//         filmCode: t.number
-//       },
-//       sortKey: {}
-//     }
-//   ]
-// });
+const Movie = tynogels.define({
+  tableName: "Movies",
+  hashKey: {
+    year: t.number
+  },
+  sortKey: {},
+  schema: {
+    year: t.number,
+    filmCode: t.number
+  },
+  secondaryIndexes: [
+    {
+      name: t.literal("Gsi-Test"),
+      hashKey: {
+        filmCode: t.number
+      },
+      sortKey: {},
+      schema: {
+        filmCode: t.number
+      }
+    }
+  ]
+});
 
-// it("Create movies for later testing", async () => {
-//   await Movie.create({ year: 1000, filmCode: 10 });
-//   await Movie.create({ year: 2000, filmCode: 20 });
-//   await Movie.create({ year: 3000, filmCode: 30 });
-//   await Movie.create({ year: 4000, filmCode: 40 });
-// });
+it("Create movies for later testing", async () => {
+  await Movie.create({ year: 1000, filmCode: 10 });
+  await Movie.create({ year: 2000, filmCode: 20 });
+  await Movie.create({ year: 3000, filmCode: 30 });
+  await Movie.create({ year: 4000, filmCode: 40 });
+});
 
-// it("Read movie based on GSI", async () => {
-//   const movie = await Movie.read({ filmCode: 10 });
+it("Read movie based on GSI", async () => {
+  const movie = await Movie.index("Gsi-Test")
+    .query(10)
+    .exec();
 
-//   if (shouldLog) {
-//     console.log(movie);
-//   }
-// });
+  if (shouldLog) {
+    console.log(movie);
+  }
+});
 
 const secondaryIndexes = [
   {
@@ -387,15 +396,11 @@ const secondaryIndexes = [
     },
     sortKey: {
       year: t.number
-    }
-  },
-  {
-    name: t.literal("FooTest"),
-    hashKey: {
-      foob: t.number
     },
-    sortKey: {
-      year: t.number
+    schema: {
+      bookCode: t.number,
+      year: t.number,
+      whatever: t.string
     }
   }
 ] as const;
@@ -409,6 +414,8 @@ const Book = tynogels.define({
     foob: t.string
   },
   schema: {
+    year: t.number,
+    foob: t.string,
     bookCode: t.number,
     random: t.string
   },
@@ -425,48 +432,20 @@ it("Create books for later testing", async () => {
   );
 });
 
-it("Read book based on hash/sort GSI", async () => {
-  const books = await Book.read({ bookCode: 42, year: 1000 });
+it("Query books simply on hash key", async () => {
+  const books = await Book.query(1000).exec();
 
   if (shouldLog) {
     console.log(books);
   }
 });
 
-it("Query books simply on hash key", async () => {
-  const books = await Book.query(1000).exec();
-
-  console.log(books);
-});
-
 it("Simple query using index", async () => {
-  const books = await Book.index("FooTest");
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .exec();
 
-  console.log(books);
+  if (shouldLog) {
+    console.log(books);
+  }
 });
-
-// it("Query books on complex query", async () => {
-//   const books = await Book.query({
-//     bookCode: 4
-//   })
-//     .where("year")
-//     .equals(4);
-
-//   console.log(books);
-// });
-
-// it("Query books simply using secondary index", async () => {
-//   const books = await Book.query({
-//     bookCode: 1337
-//   }).exec();
-
-//   console.log(books);
-// });
-
-// it("Query books using hash/sort secondary index", async () => {
-//   const books = await Book.query({
-//     bookCode: 1337
-//   }).where("");
-
-//   console.log(books);
-// });

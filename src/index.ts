@@ -21,7 +21,7 @@ export default {
   define: <
     P1 extends t.Props,
     P2 extends t.Props,
-    P3 extends t.Props,
+    P3 extends t.Props & P1 & P2,
     P4 extends t.Props,
     P5 extends t.Props,
     P6 extends t.Props,
@@ -32,6 +32,11 @@ export default {
     P11 extends t.Props,
     P12 extends t.Props,
     P13 extends t.Props,
+    P14 extends t.Props & P4 & P5,
+    P15 extends t.Props & P6 & P7,
+    P16 extends t.Props & P8 & P9,
+    P17 extends t.Props & P10 & P11,
+    P18 extends t.Props & P12 & P13,
     PSec1 extends t.LiteralC<string>,
     PSec2 extends t.LiteralC<string>,
     PSec3 extends t.LiteralC<string>,
@@ -43,11 +48,11 @@ export default {
     sortKey: P2;
     schema: P3;
     readonly secondaryIndexes: readonly [
-      { name: PSec1; hashKey: P4; sortKey: P5 }?,
-      { name: PSec2; hashKey: P6; sortKey: P7 }?,
-      { name: PSec3; hashKey: P8; sortKey: P9 }?,
-      { name: PSec4; hashKey: P10; sortKey: P11 }?,
-      { name: PSec5; hashKey: P12; sortKey: P13 }?
+      { name: PSec1; hashKey: P4; sortKey: P5; schema: P14 }?,
+      { name: PSec2; hashKey: P6; sortKey: P7; schema: P15 }?,
+      { name: PSec3; hashKey: P8; sortKey: P9; schema: P16 }?,
+      { name: PSec4; hashKey: P10; sortKey: P11; schema: P17 }?,
+      { name: PSec5; hashKey: P12; sortKey: P13; schema: P18 }?
     ];
   }) =>
     ((
@@ -85,49 +90,14 @@ export default {
             )
           : doc.put({ Item: x, TableName: config.tableName }).promise(),
       read: async (
-        x: t.TypeOf<typeof keyType>
+        x: t.TypeOf<typeof hashType> & t.TypeOf<typeof sortType>
       ): Promise<
-        t.TypeOf<typeof keyType> &
-          t.TypeOf<typeof type> &
-          t.TypeOf<typeof baseKeyType>
-      > => {
-        const keyOf = x => _.keys(x)[0];
-
-        if (
-          _.keys(x)[0] === keyOf(config.hashKey) &&
-          _.keys(x)[1] === keyOf(config.sortKey)
-        ) {
-          return (await doc
-            .get({ Key: x, TableName: config.tableName })
-            .promise()).Item as any;
-        } else {
-          const skey = config.secondaryIndexes.find(
-            skey =>
-              keyOf(skey.hashKey) === _.keys(x)[0] &&
-              keyOf(skey.sortKey) === _.keys(x)[1]
-          );
-
-          const sortPresent = Boolean(_.keys(skey.sortKey)[0]);
-
-          return (await doc
-            .query({
-              TableName: config.tableName,
-              IndexName: skey.name.value,
-              KeyConditionExpression: `#x = :x${
-                sortPresent ? " and #y = :y" : ""
-              }`,
-              ExpressionAttributeNames: _.pickBy({
-                "#x": _.keys(x)[0],
-                "#y": sortPresent ? _.keys(x)[1] : null
-              }),
-              ExpressionAttributeValues: _.pickBy({
-                ":x": _.values(x)[0],
-                ":y": sortPresent ? _.values(x)[1] : null
-              })
-            })
-            .promise()).Items[0] as any;
-        }
-      },
+        Partial<t.TypeOf<typeof type>> &
+          t.TypeOf<typeof hashType> &
+          t.TypeOf<typeof sortType>
+      > =>
+        (await doc.get({ Key: x, TableName: config.tableName }).promise())
+          .Item as any,
       batchRead: async (
         x: t.TypeOf<typeof keyType>[]
       ): Promise<(t.TypeOf<typeof keyType> & t.TypeOf<typeof type>)[]> =>
@@ -266,38 +236,75 @@ export default {
           name: T;
           hashKey: any;
           sortKey: any;
+          schema: any;
         }) extends t.TypeOf<typeof secType1>
           ? t.TypeOf<typeof secType1>
           : ({
               name: T;
               hashKey: any;
               sortKey: any;
+              schema: any;
             }) extends t.TypeOf<typeof secType2>
           ? t.TypeOf<typeof secType2>
           : ({
               name: T;
               hashKey: any;
               sortKey: any;
+              schema: any;
             }) extends t.TypeOf<typeof secType3>
           ? t.TypeOf<typeof secType3>
           : ({
               name: T;
               hashKey: any;
               sortKey: any;
+              schema: any;
             }) extends t.TypeOf<typeof secType4>
           ? t.TypeOf<typeof secType4>
           : ({
               name: T;
               hashKey: any;
               sortKey: any;
+              schema: any;
             }) extends t.TypeOf<typeof secType5>
           ? t.TypeOf<typeof secType5>
           : never;
 
-        type SpecificSecType = FindType<typeof indexName>;
+        type SpecificType = any extends FindType<typeof indexName>
+          ? never
+          : FindType<typeof indexName>;
 
-        return (): SpecificSecType => {
-          return {} as SpecificSecType;
+        type HashKeyNameType = keyof SpecificType["hashKey"];
+        type HashKeyType = SpecificType["hashKey"][HashKeyNameType];
+
+        type SortKeyNameType = keyof SpecificType["sortKey"];
+        type SortKeyType = SpecificType["sortKey"][SortKeyNameType];
+
+        type SchemaType = SpecificType["schema"];
+        type QueryReturnType = Partial<SchemaType> &
+          SpecificType["hashKey"] &
+          SpecificType["sortKey"];
+
+        const secondaryKey = (config.secondaryIndexes.find(
+          x => x.name.value === indexName
+        ) as unknown) as SpecificType;
+
+        return {
+          query: (val: HashKeyType) => ({
+            exec: async (): Promise<QueryReturnType[]> =>
+              (await doc
+                .query({
+                  TableName: config.tableName,
+                  IndexName: indexName,
+                  KeyConditionExpression: `#x = :x`,
+                  ExpressionAttributeNames: {
+                    "#x": _.keys(secondaryKey.hashKey)[0]
+                  },
+                  ExpressionAttributeValues: {
+                    ":x": val
+                  }
+                })
+                .promise()).Items as any
+          })
         };
       }
     }))(
@@ -342,30 +349,45 @@ export default {
             ])
           )
         : undefined,
-      t.type({
-        name: _.get(config.secondaryIndexes[0], "name"),
-        hashKey: t.type(_.get(config.secondaryIndexes[0], "hashKey")),
-        sortKey: t.type(_.get(config.secondaryIndexes[0], "sortKey"))
-      }),
-      t.type({
-        name: _.get(config.secondaryIndexes[1], "name"),
-        hashKey: t.type(_.get(config.secondaryIndexes[1], "hashKey")),
-        sortKey: t.type(_.get(config.secondaryIndexes[1], "sortKey"))
-      }),
-      t.type({
-        name: _.get(config.secondaryIndexes[2], "name"),
-        hashKey: t.type(_.get(config.secondaryIndexes[2], "hashKey")),
-        sortKey: t.type(_.get(config.secondaryIndexes[2], "sortKey"))
-      }),
-      t.type({
-        name: _.get(config.secondaryIndexes[3], "name"),
-        hashKey: t.type(_.get(config.secondaryIndexes[3], "hashKey")),
-        sortKey: t.type(_.get(config.secondaryIndexes[3], "sortKey"))
-      }),
-      t.type({
-        name: _.get(config.secondaryIndexes[4], "name"),
-        hashKey: t.type(_.get(config.secondaryIndexes[4], "hashKey")),
-        sortKey: t.type(_.get(config.secondaryIndexes[4], "sortKey"))
-      })
+      config.secondaryIndexes[0]
+        ? t.type({
+            name: _.get(config.secondaryIndexes[0], "name"),
+            hashKey: t.type(_.get(config.secondaryIndexes[0], "hashKey")),
+            sortKey: t.type(_.get(config.secondaryIndexes[0], "sortKey")),
+            schema: t.type(_.get(config.secondaryIndexes[0], "schema"))
+          })
+        : undefined,
+      config.secondaryIndexes[1]
+        ? t.type({
+            name: _.get(config.secondaryIndexes[1], "name"),
+            hashKey: t.type(_.get(config.secondaryIndexes[1], "hashKey")),
+            sortKey: t.type(_.get(config.secondaryIndexes[1], "sortKey")),
+            schema: t.type(_.get(config.secondaryIndexes[1], "schema"))
+          })
+        : undefined,
+      config.secondaryIndexes[2]
+        ? t.type({
+            name: _.get(config.secondaryIndexes[2], "name"),
+            hashKey: t.type(_.get(config.secondaryIndexes[2], "hashKey")),
+            sortKey: t.type(_.get(config.secondaryIndexes[2], "sortKey")),
+            schema: t.type(_.get(config.secondaryIndexes[2], "schema"))
+          })
+        : undefined,
+      config.secondaryIndexes[3]
+        ? t.type({
+            name: _.get(config.secondaryIndexes[3], "name"),
+            hashKey: t.type(_.get(config.secondaryIndexes[3], "hashKey")),
+            sortKey: t.type(_.get(config.secondaryIndexes[3], "sortKey")),
+            schema: t.type(_.get(config.secondaryIndexes[3], "schema"))
+          })
+        : undefined,
+      config.secondaryIndexes[4]
+        ? t.type({
+            name: _.get(config.secondaryIndexes[4], "name"),
+            hashKey: t.type(_.get(config.secondaryIndexes[4], "hashKey")),
+            sortKey: t.type(_.get(config.secondaryIndexes[4], "sortKey")),
+            schema: t.type(_.get(config.secondaryIndexes[4], "schema"))
+          })
+        : undefined
     )
 };
