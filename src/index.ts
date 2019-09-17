@@ -289,7 +289,51 @@ export default {
         ) as unknown) as SpecificType;
 
         return {
-          query: (val: HashKeyType) => ({
+          query: (hashValue: HashKeyType) => ({
+            where: (sortKey: SortKeyNameType) =>
+              (compBuilder => ({
+                equals: compBuilder("="),
+                lte: compBuilder("<="),
+                lt: compBuilder("<"),
+                gt: compBuilder(">"),
+                gte: compBuilder(">="),
+                between: (val1: SortKeyType, val2: SortKeyType) => ({
+                  exec: async (): Promise<QueryReturnType[]> =>
+                    (await doc
+                      .query({
+                        TableName: config.tableName,
+                        IndexName: indexName,
+                        KeyConditionExpression: `#x = :x and #y between :y and :z`,
+                        ExpressionAttributeNames: {
+                          "#x": _.keys(secondaryKey.hashKey)[0],
+                          "#y": String(sortKey)
+                        },
+                        ExpressionAttributeValues: {
+                          ":x": hashValue,
+                          ":y": val1,
+                          ":z": val2
+                        }
+                      })
+                      .promise()).Items as any
+                })
+              }))((operand: string) => (val: SortKeyType) => ({
+                exec: async (): Promise<(QueryReturnType)[]> =>
+                  (await doc
+                    .query({
+                      TableName: config.tableName,
+                      IndexName: indexName,
+                      KeyConditionExpression: `#x = :x and #y ${operand} :y`,
+                      ExpressionAttributeNames: {
+                        "#x": _.keys(secondaryKey.hashKey)[0],
+                        "#y": String(sortKey)
+                      },
+                      ExpressionAttributeValues: {
+                        ":x": hashValue,
+                        ":y": val
+                      }
+                    })
+                    .promise()).Items as any
+              })),
             exec: async (): Promise<QueryReturnType[]> =>
               (await doc
                 .query({
@@ -300,7 +344,7 @@ export default {
                     "#x": _.keys(secondaryKey.hashKey)[0]
                   },
                   ExpressionAttributeValues: {
-                    ":x": val
+                    ":x": hashValue
                   }
                 })
                 .promise()).Items as any

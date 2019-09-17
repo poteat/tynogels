@@ -145,7 +145,8 @@ ddb
     KeySchema: [{ AttributeName: "year", KeyType: "HASH" }],
     AttributeDefinitions: [
       { AttributeName: "year", AttributeType: "N" },
-      { AttributeName: "bookCode", AttributeType: "N" }
+      { AttributeName: "bookCode", AttributeType: "N" },
+      { AttributeName: "name", AttributeType: "S" }
     ],
     ProvisionedThroughput: {
       ReadCapacityUnits: 10,
@@ -157,6 +158,20 @@ ddb
         KeySchema: [
           { AttributeName: "bookCode", KeyType: "HASH" },
           { AttributeName: "year", KeyType: "RANGE" }
+        ],
+        Projection: {
+          ProjectionType: "KEYS_ONLY"
+        },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 10,
+          WriteCapacityUnits: 10
+        }
+      },
+      {
+        IndexName: "Foo-Test",
+        KeySchema: [
+          { AttributeName: "bookCode", KeyType: "HASH" },
+          { AttributeName: "name", KeyType: "RANGE" }
         ],
         Projection: {
           ProjectionType: "KEYS_ONLY"
@@ -402,6 +417,19 @@ const secondaryIndexes = [
       year: t.number,
       whatever: t.string
     }
+  },
+  {
+    name: t.literal("Foo-Test"),
+    hashKey: {
+      bookCode: t.number
+    },
+    sortKey: {
+      name: t.string
+    },
+    schema: {
+      bookCode: t.number,
+      name: t.string
+    }
   }
 ] as const;
 
@@ -417,7 +445,8 @@ const Book = tynogels.define({
     year: t.number,
     foob: t.string,
     bookCode: t.number,
-    random: t.string
+    random: t.string,
+    name: t.string
   },
   secondaryIndexes
 });
@@ -427,8 +456,12 @@ it("Create books for later testing", async () => {
     _.times(5, x => Book.create({ year: 1000 + x, bookCode: x + 42 }))
   );
 
+  const names = ["aaa", "abc/", "ccc", "ddd", "eee"];
+
   await Promise.all(
-    _.times(5, x => Book.create({ year: 2000 + x, bookCode: 1337 }))
+    _.times(5, x =>
+      Book.create({ year: 2000 + x, bookCode: 1337, name: names[x] })
+    )
   );
 });
 
@@ -443,6 +476,78 @@ it("Query books simply on hash key", async () => {
 it("Simple query using index", async () => {
   const books = await Book.index("Gsi-Test")
     .query(1337)
+    .exec();
+
+  if (shouldLog) {
+    console.log(books);
+  }
+});
+
+it("Hash/sort index query via equals", async () => {
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .where("year")
+    .equals(2002)
+    .exec();
+
+  if (shouldLog) {
+    console.log(books);
+  }
+});
+
+it("Hash/sort index query via less than or equal", async () => {
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .where("year")
+    .lte(2002)
+    .exec();
+
+  if (shouldLog) {
+    console.log(books);
+  }
+});
+
+it("Hash/sort index query via less than", async () => {
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .where("year")
+    .lt(2002)
+    .exec();
+
+  if (shouldLog) {
+    console.log(books);
+  }
+});
+
+it("Hash/sort index query via greater than", async () => {
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .where("year")
+    .gt(2002)
+    .exec();
+
+  if (shouldLog) {
+    console.log(books);
+  }
+});
+
+it("Hash/sort index query via greater than or equal", async () => {
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .where("year")
+    .gte(2002)
+    .exec();
+
+  if (shouldLog) {
+    console.log(books);
+  }
+});
+
+it("Hash/sort index query via between", async () => {
+  const books = await Book.index("Gsi-Test")
+    .query(1337)
+    .where("year")
+    .between(2002, 2003)
     .exec();
 
   if (shouldLog) {
