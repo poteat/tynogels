@@ -44,7 +44,7 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "aws-sdk": "^2.511.0",
+    "aws-sdk": "^2.751.0",
     "fp-ts": "^2.0.5",
     "io-ts": "^2.0.1",
     "lodash": "^4.17.15"
